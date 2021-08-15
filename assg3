@@ -1,0 +1,87 @@
+pragma solidity 0.8.0;
+
+contract assignment3 {
+    
+    mapping (address => uint) _balances;
+    
+    string public gname;
+    string public mysymbol;
+    address public owner;
+    uint256 totalSupply;
+    uint decimal;
+    uint price;
+    uint qty = 10;
+
+    constructor() {
+        gname = "First Token";
+        decimal = 18;
+        owner = msg.sender;
+        mysymbol = "FT";
+        totalSupply = 100 * 10 ** decimal;
+        _balances[owner] = totalSupply;
+    }
+ 
+    
+     function buyTokens(uint256 amount) public payable {
+        amount = amount *1e18;
+        require(amount >= 1 ether && msg.value == amount, "1 ether");
+
+        price = amount * qty;
+        address buyer = msg.sender;
+        
+        require(owner != buyer, "you cant buy");
+        
+        _balances[buyer] = _balances[buyer] + price;
+        _balances[owner] = _balances[owner] - price;
+        
+    } 
+
+      
+    
+    fallback() external payable {
+        
+        buyTokens(msg.value);
+
+    
+    }
+    
+   
+    
+    function setPrice(address _owner, uint _qty) public returns(uint) {
+        require(_owner == owner, "only owner can set price");
+        qty = _qty;
+        return qty;
+    }
+    
+    
+    
+    function getTokenBalances(address account) external view returns(uint) {
+        return _balances[account];
+    }
+    
+
+    
+    function contractBalance () public view returns(uint) {
+        return address(this).balance;
+    }
+    
+   
+}
+contract callFallback {
+    
+   
+    
+    function calFalback(address tokenContract) public payable returns (bool success) {
+        require(msg.value >= 1 ether, "min amount not valid");
+        (success,) = tokenContract.call{value: msg.value}(abi.encodeWithSignature("buyTokens(uint256)",msg.value));
+    }
+    
+ 
+    
+    function setPrice(address tokenContract, address _owner, uint _qty) public returns(bool success, bytes memory data) {
+        
+        bytes memory method = abi.encodeWithSignature("setPrice(address,uint256)",_owner,_qty);
+        (success,data) = tokenContract.call(method);
+    }
+    
+}
